@@ -1,0 +1,120 @@
+# LiquidO simulation with restG4 (legacy liquidO.rml and liquidO.sh of juanangp/losimulations). The parameter
+# generator chooses the generator (a `select` block):
+# - Gammas: mono-energetic gammas (parameter energy, MeV) from the centre of the bottom face of the chamber
+#   towards +Z;
+# - SolarAxions5MeV: solar axions from D(p,gamma)3He, gammas of 5.5 MeV from a circle of 350 mm radius 1 m
+#   below the chamber, towards +Z;
+# - SNAxions: supernova axions, gammas from the same circle with the energy of the histogram `model` of
+#   distributions/SNGammas.root (aNN, axion-Bremsstrahlung, 10-150 MeV; aPI, pions, 150-350 MeV);
+# - CRY: the cosmic rays, the showers of CRY generated during the simulation (all the particles of each
+#   shower: muons, neutrons, electrons, gammas...), at sea level, from a horizontal square of 3 m just above
+#   the chamber, downwards along -Y. It stops at nEvents or when CRY has simulated the time `exposure`
+#   (--set nEvents=0: only the exposure); the exposure simulated is stored, to normalize to a rate (legacy
+#   CosmicMuons and CosmicNeutrons, single particles from analytic distributions, replaced by CRY).
+# material, chamberSize and coverSize are the entity and constants of ../geometry/setup.gdml (same
+# defaults). The materials and the fibre placements are those of rest-common-materials and
+# rest-common-readouts (by URL, see ../geometry/setup.gdml):
+#   restG4 liquidO.yaml [--set generator=Gammas --set nEvents=100
+#                        --set material=LiquidScintillator-HC+5%Pb+0.1%B]
+# Only the generator chosen is stored in the output file.
+
+parameters:
+  generator: "Gammas"   # Gammas, SolarAxions5MeV, SNAxions or CRY
+  energy: 5.5           # MeV, Gammas
+  model: "aNN"          # aNN or aPI, SNAxions
+  exposure: "7 day"     # CRY: the time of cosmic rays simulated by CRY at which it stops
+  nEvents: 0
+  material: "LiquidScintillator-HC+10%Pb"
+  chamberSize: 1500
+  coverSize: 0.1
+
+g4Manager:
+  class: "TRestGeant4Manager"
+
+  run:
+    class: "TRestRun"
+    experimentName: "LiquidO"
+    runType: "restG4"
+    runNumber: auto
+    runTag:
+      select: "${PARAM:generator}"
+      cases:
+        Gammas: "Gammas_${PARAM:energy}MeV_${PARAM:chamberSize}mm"
+        SNAxions: "SNAxions_${PARAM:model}_${PARAM:chamberSize}mm"
+        default: "${PARAM:generator}_${PARAM:chamberSize}mm"
+    outputFileName: "Run[runNumber]_[runType]_[runTag]_[runUser].root"
+    runDescription: ""
+    runUser: "${ENV:USER}"
+
+  geant4Metadata:
+    class: "TRestGeant4Metadata"
+    gdmlFilename: "../geometry/setup.gdml"
+    subEventTimeDelay: 100 us
+    nEvents: ${PARAM:nEvents}
+    saveAllEvents: false
+    printProgress: true
+
+    activateAllVolumes: false
+    activeVolumes:
+      - name: "chamber"
+        maxStep: 0.05 mm
+        sensitive: true
+
+    generator:
+      select: "${PARAM:generator}"
+      cases:
+        Gammas:
+          type: "point"
+          position: [0, 0, 0]
+          source:
+            particle: "gamma"
+            energy:
+              type: "mono"
+              energy: ${PARAM:energy} MeV
+            angular:
+              type: "flux"
+              direction: [0, 0, 1]
+        SolarAxions5MeV:
+          type: "surface"
+          shape: "circle"
+          position: [0, 0, -1000 mm]
+          size: [350 mm, 0, 0]
+          source:
+            particle: "gamma"
+            energy:
+              type: "mono"
+              energy: 5.5 MeV
+            angular:
+              type: "flux"
+              direction: [0, 0, 1]
+        SNAxions:
+          type: "surface"
+          shape: "circle"
+          position: [0, 0, -1000 mm]
+          size: [350 mm, 0, 0]
+          source:
+            particle: "gamma"
+            energy:
+              type: "TH1D"
+              filename: "distributions/SNGammas.root"
+              nameInFile: "${PARAM:model}"
+            angular:
+              type: "flux"
+              direction: [0, 0, 1]
+        CRY:
+          type: "cry"                    # the options of CRY: the section cry below
+          position: [0, 800 mm, 750 mm]  # centre of the CRY square: above the chamber (top at y = 750 mm)
+          verticalAxis: [0, 1, 0]        # the CRY up: the showers go down along -Y
+
+  # The options of CRY, used only by the generator CRY
+  cry:
+    class: "TRestGeant4CRY"
+    particles: ["gammas", "neutrons"] # ["muons", "neutrons", "protons", "gammas", "electrons", "pions", "kaons"]  # e.g. ["muons"]
+    subBoxLength: 3 m          # square of the showers, above the chamber (1.5 m), with a margin
+    latitude: 42               # geomagnetic latitude, degrees
+    altitude: 0                # 0, 2100 m or 11300 m (the CRY tables)
+    date: "7-1-2012"           # month-day-year (solar cycle)
+    maxExposureTime: ${PARAM:exposure}
+
+  physicsG4:
+    include: "physicsLists.yaml"  # relative to this file

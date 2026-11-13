@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!-- LiquidO chamber for restG4: a cube of liquid scintillator crossed by fibres, in a copper cover -->
+
+<!DOCTYPE gdml [
+        <!-- Parameter `material` of the restG4 configurations: the scintillator, a material of materials.xml
+             (% written &#37; in an entity; restG4 option set: material=LiquidScintillator-HC+5%Pb+0.1%B) -->
+        <!ENTITY material "LiquidScintillator-HC+10&#37;Pb">
+        <!ENTITY geometry SYSTEM "geometry.gdml">
+        <!-- Materials (rest-common-materials v1.0) and placements of the fibres (readout LiquidO_Readout of
+             rest-common-readouts v1.0) -->
+        <!ENTITY materials SYSTEM "https://github.com/rest-for-physics-toolkit/rest-common-materials/releases/download/v1.0/materials.xml">
+        <!ENTITY fibres SYSTEM "https://github.com/rest-for-physics-toolkit/rest-common-readouts/releases/download/v1.0/LiquidO_Readout_fibres.xml">
+        ]>
+
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+    <!-- All values in mm -->
+    <define>
+        <constant name="world_size" value="20000"/>
+        <!-- Parameters chamberSize and coverSize of the restG4 configurations. The size and position of the
+             readout (LiquidO of rest-common-readouts, 1500 mm) must be the same: another size needs another readout
+             and its fibres -->
+        <constant name="chamberSize" value="1500"/>
+        <constant name="coverSize" value="0.1"/>
+        <!-- Diameter of the fibres -->
+        <constant name="fibreDiameter" value="1"/>
+    </define>
+
+    &materials;
+
+    &geometry;
+
+    <setup name="Default" version="1.0">
+        <world ref="World"/>
+    </setup>
+
+</gdml>

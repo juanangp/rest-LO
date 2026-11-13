@@ -1,0 +1,123 @@
+# LiquidO: restG4 output -> scintillation photons -> photoelectrons of the photons captured by the fibres
+# (SiPMs) -> raw signals of the SiPMs (electronics) -> hits
+# XZ (fibres along Y) and YZ (fibres along X) -> tracks. It replaces the macro Geant4ToSignal.C (same
+# parameters, now in the processes):
+#   restManager --c Geant4ToTracks.yaml --i Run<number>_restG4_<tag>_<user>.root  # liquidO.yaml
+# The readout is LiquidO.root of rest-common-readouts (the fibres of the GDML are its
+# LiquidO_Readout_fibres.xml).
+#
+# Correspondence with the constants of Geant4ToSignal.C:
+# - particleQuenchingMap (0.1 for ions) -> quenching (Birks law, kB = 0.1 mm/MeV);
+# - photoElectronsPerkeV (0.4), lightSigma (10 mm) -> lightYield of the medium (scintillation),
+#   captureProbability of lightCollection (localCapture: Gaussian light ball of sigma 10 mm, the opaque
+#   scintillator) and its quantumEfficiency (SiPMs). The amplitude 0.0318 gives 0.4 photoelectrons per keV
+#   in total: the sum over the fibres of both families is ~ 2 pi sigma^2 / pitch^2 = 3.14 times the amplitude,
+#   10 * 3.14 * 0.0318 * 0.4 = 0.4. Replace it with the capture probability of an optical simulation
+#   ("file.root:graphName");
+# - timeResolution (0.04 us), nTimeBins (512), timeOffset (4 us), trigger at the first photoelectron ->
+#   signalToRaw (sampling, nPoints, triggerDelay, triggerMode firstDeposit);
+# - shapingTime (10 bins), gain (10, the sum of the response) -> signalShaping (0.4 us, gain: height of the
+#   pulse of a photoelectron, 0.76 ADC for that response); ADCOffset (250) -> offset; noiseLevel (2 ADC) ->
+#   addNoise;
+# - points over threshold (2 sigma, 2 points) and amplitude and time of the maximum -> rawToSignal and
+#   signalToHits (onlyMax);
+# - trackDistance (30 mm) -> hitsToTrack (clusterDistance), tracks of XZ and YZ hits separately.
+# The resolution 1/sqrt(N) of the macro was applied to a copy of the data (no effect); here the fluctuations
+# are those of the photoelectrons (Poisson).
+
+manager:
+  class: "TRestManager"
+  name: "manager"
+
+  run:
+    class: "TRestRun"
+    name: "restRun"
+    inheritInputRun: true
+    runUser: "${ENV:USER}"
+    runDescription: "Geant4ToTracks"
+    inputFileName: ""
+    outputFileName: "Run[runNumber]_TRACK_[runTag]_[runUser].root"
+
+  readoutManager:
+    class: "TRestDetectorReadoutManager"
+    readouts:
+      - inputFileName: "https://github.com/rest-for-physics-toolkit/rest-common-readouts/releases/download/v1.0/LiquidO.root"
+        instanceName: "LiquidO_Readout"
+        decodingName: "nominal_decoding"
+
+  medium:
+    class: "TRestDetectorMedium"
+    name: "LiquidScintillator"
+    state: "liquid"
+    light:
+      lightYield: 10  # photons per keV
+
+  pipeline:
+    class: "TRestEventProcessManager"
+    name: "pipeline"
+    eventsToProcess: 0
+    outputEventStorage: true
+    quenching:
+      class: "TRestGeant4QuenchingProcess"
+      volume:
+        - name: "chamber"
+          model: "birks"
+          birksConstant: 0.0001  # mm/keV
+      observables: ["sensitiveVolumeEnergyBefore", "sensitiveVolumeEnergyAfter"]
+    geant4ToHits:
+      class: "TRestGeant4ToDetectorHitsProcess"
+      volumes: ["chamber"]
+    scintillation:
+      class: "TRestDetectorScintillationProcess"
+      observables: ["NPhotons"]
+    lightCollection:
+      class: "TRestDetectorLightCollectionProcess"
+      model: "localCapture"
+      captureProbability: "0.0318*exp(-x*x/(2*10*10))"
+      maxDistance: 40 mm
+      quantumEfficiency: 0.4  # SiPMs
+      observables: ["NPhotoelectrons", "NHitsWithoutChannel"]
+    hitsToSignal:
+      class: "TRestDetectorHitsToSignalProcess"
+      sampling: 0.04 us
+      observables: ["NHitsRejected"]
+    signalShaping:
+      class: "TRestDetectorSignalShapingProcess"
+      shapingType: "shaperSin"
+      shapingTime: 0.4 us
+      gain: 0.76
+    signalToRaw:
+      class: "TRestDetectorSignalToRawSignalProcess"
+      sampling: 0.04 us
+      nPoints: 512
+      mode: "sample"
+      triggerMode: "firstDeposit"
+      triggerDelay: 4 us
+      gain: 1
+      offset: 250
+      maxValue: 32767
+      observables: ["TriggerTime", "NSaturatedSignals"]
+    addNoise:
+      class: "TRestRawSignalAddNoiseProcess"
+      noise:
+        - method: "white"
+          amplitude: 2
+    rawToSignal:
+      class: "TRestRawToDetectorSignalProcess"
+      sampling: 0.04
+      triggerStarts: 0
+      gain: 1
+      zeroSuppression: true
+      baselineRange: [0, 90]
+      integralRange: [100, 511]
+      pointsThreshold: 2
+      signalThreshold: 1
+      pointsOverThreshold: 2
+      observables: ["NSignalsRejected"]
+    signalToHits:
+      class: "TRestDetectorSignalToHitsProcess"
+      method: "onlyMax"
+      smoothingPoints: 1
+    hitsToTrack:
+      class: "TRestDetectorHitsToTrackProcess"
+      clusterDistance: 30 mm

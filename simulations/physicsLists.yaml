@@ -1,0 +1,25 @@
+# Physics lists of the LiquidO simulations (those of liquidO.rml), included by the restG4 configurations
+# of this directory (key `include`).
+class: "TRestGeant4PhysicsLists"
+cutForGamma: 0.5 mm
+cutForElectron: 0.5 mm
+cutForPositron: 0.5 mm
+cutForMuon: 1 mm
+cutForNeutron: 1 mm
+minEnergyRangeProductionCuts: 1 keV
+maxEnergyRangeProductionCuts: 1 GeV
+
+physicsList:
+  - name: "G4EmLivermorePhysics"
+  - name: "G4DecayPhysics"
+  - name: "G4RadioactiveDecayPhysics"
+  - name: "G4RadioactiveDecay"
+    option:
+      - name: "ICM"
+        value: "true"
+      - name: "ARM"
+        value: "true"
+  - name: "G4HadronElasticPhysicsHP"
+  - name: "G4IonBinaryCascadePhysics"
+  - name: "G4HadronPhysicsQGSP_BIC_HP"
+  - name: "G4EmExtraPhysics"

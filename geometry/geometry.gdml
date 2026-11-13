@@ -1,0 +1,61 @@
+<solids>
+    <box name="WorldSolid" x="world_size" y="world_size" z="world_size" lunit="mm"/>
+    <box name="coverSolid1" x="chamberSize+coverSize" y="chamberSize+coverSize" z="chamberSize+coverSize" lunit="mm"/>
+    <box name="chamberSolid" x="chamberSize" y="chamberSize" z="chamberSize" lunit="mm"/>
+    <box name="wallSolid" x="8000" y="10" z="8000" lunit="mm"/>
+    <!-- A fibre: a tube along Z crossing the chamber (TRestFibreReadout rotates it to its axis) -->
+    <tube name="fibreSolid" rmax="fibreDiameter/2" z="chamberSize-0.01" deltaphi="360" aunit="deg" lunit="mm"/>
+
+    <subtraction name="coverSolid">
+        <first ref="coverSolid1"/>
+        <second ref="chamberSolid"/>
+        <position name="coverHolePosition" x="0" y="0" z="0" unit="mm"/>
+    </subtraction>
+</solids>
+
+<structure>
+
+    <!-- The fibres are dead material: the energy deposited in them gives no scintillation -->
+    <volume name="fibreVolume">
+        <materialref ref="G4_POLYSTYRENE"/>
+        <solidref ref="fibreSolid"/>
+    </volume>
+
+    <volume name="chamberVolume">
+        <materialref ref="&material;"/>
+        <solidref ref="chamberSolid"/>
+        &fibres;
+    </volume>
+
+    <volume name="coverVolume">
+        <materialref ref="G4_Cu"/>
+        <solidref ref="coverSolid"/>
+    </volume>
+
+    <volume name="wallVolume">
+        <materialref ref="Vacuum"/>
+        <solidref ref="wallSolid"/>
+    </volume>
+
+    <!-- The chamber goes from z = 0 to z = chamberSize (the box of the readout), the cover around it -->
+    <volume name="World">
+        <materialref ref="G4_AIR"/>
+        <solidref ref="WorldSolid"/>
+
+        <physvol name="cover">
+            <volumeref ref="coverVolume"/>
+            <position name="coverPosition" x="0" y="0" z="chamberSize/2." unit="mm"/>
+        </physvol>
+
+        <physvol name="chamber">
+            <volumeref ref="chamberVolume"/>
+            <position name="chamberPosition" x="0" y="0" z="chamberSize/2." unit="mm"/>
+        </physvol>
+
+        <physvol name="wall">
+            <volumeref ref="wallVolume"/>
+            <position name="wallPosition" x="0" y="chamberSize" z="chamberSize/2." unit="mm"/>
+        </physvol>
+    </volume>
+
+</structure>
