@@ -24,6 +24,13 @@
 # - trackDistance (30 mm) -> hitsToTrack (clusterDistance), tracks of XZ and YZ hits separately.
 # The resolution 1/sqrt(N) of the macro was applied to a copy of the data (no effect); here the fluctuations
 # are those of the photoelectrons (Poisson).
+#
+# Beyond the macro (placeholders to be measured): the photons captured by a fibre travel along it to its read
+# end (readoutEnd of the fibre families in LiquidO.root), attenuated and delayed by the `wls` response of the
+# fibres (Y11, wlsMedium of lightCollection), so captureProbability is now the capture by the fibre without
+# that transport (the amplitude 0.0318 has to be tuned again: about exp(-0.75 m / 3.5 m) = 0.8 times less
+# light on average); lightToSignal gives each photoelectron its time (scintillation profile of the liquid,
+# re-emission of the fibre, SiPM jitter) and charge (SiPM gain spread).
 
 manager:
   class: "TRestManager"
@@ -51,6 +58,18 @@ manager:
     state: "liquid"
     light:
       lightYield: 10  # photons per keV
+      scintillation:
+        - components:
+            - {fraction: 1, riseTime: 1 ns, decayTime: 4.5 ns}
+
+  fibres:
+    class: "TRestDetectorMedium"
+    name: "Y11"
+    state: "solid"
+    wls:
+      attenuationLength: 3.5 m
+      lightSpeed: 170 mm/ns
+      decayTime: 7 ns
 
   pipeline:
     class: "TRestEventProcessManager"
@@ -69,18 +88,24 @@ manager:
       volumes: ["chamber"]
     scintillation:
       class: "TRestDetectorScintillationProcess"
+      medium: "LiquidScintillator"
       observables: ["NPhotons"]
     lightCollection:
       class: "TRestDetectorLightCollectionProcess"
       model: "localCapture"
       captureProbability: "0.0318*exp(-x*x/(2*10*10))"
       maxDistance: 40 mm
+      wlsMedium: "Y11"
       quantumEfficiency: 0.4  # SiPMs
       observables: ["NPhotoelectrons", "NHitsWithoutChannel"]
-    hitsToSignal:
-      class: "TRestDetectorHitsToSignalProcess"
+    lightToSignal:
+      class: "TRestDetectorLightToSignalProcess"
+      medium: "LiquidScintillator"
+      wlsMedium: "Y11"
+      timeJitter: 0.2 ns  # SiPMs
+      gainSpread: 0.1  # SiPMs
       sampling: 0.04 us
-      observables: ["NHitsRejected"]
+      observables: ["NPhotoelectrons", "NHitsWithoutChannel"]
     signalShaping:
       class: "TRestDetectorSignalShapingProcess"
       shapingType: "shaperSin"

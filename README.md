@@ -43,10 +43,13 @@ restManager --c rest-LO/analysis/Geant4ToTracks.yaml --i Run<number>_restG4_Gamm
     2>&1 | tee tracks.log
 ```
 
-To change the parameters of the light, edit `analysis/Geant4ToTracks.yaml`: `lightYield` of the medium,
-`captureProbability` of `lightCollection` (a formula of the distance to the fibre in mm, or
-`"file.root:graph"` from an optical simulation of Geant4) and its `quantumEfficiency`. The fibres must not
-intersect: the two families are 10 mm apart in Z.
+To change the parameters of the light, edit `analysis/Geant4ToTracks.yaml`: `lightYield` and the
+`scintillation` time profile (per particle) of the liquid, the `wls` response of the fibres (`Y11`:
+attenuation and speed along them, re-emission time), `captureProbability` of `lightCollection` (the
+capture by a fibre, a formula of the distance to it in mm, or `"file.root:graph"` from an optical
+simulation of Geant4) and its `quantumEfficiency`, and the `timeJitter` and `gainSpread` of the SiPMs in
+`lightToSignal`. The light reaches the read end of each fibre (`readoutEnd` of the readout). The fibres must
+not intersect: the two families are 10 mm apart in Z.
 
 ### Cosmic rays with CRY
 
