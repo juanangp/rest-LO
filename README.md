@@ -45,11 +45,13 @@ restManager --c rest-LO/analysis/Geant4ToTracks.yaml --i Run<number>_restG4_Gamm
 
 To change the parameters of the light, edit `analysis/Geant4ToTracks.yaml`: `lightYield` and the
 `scintillation` time profile (per particle) of the liquid, the `wls` response of the fibres (`Y11`:
-attenuation and speed along them, re-emission time) and, in `lightCollection`, `captureProbability` (the
+attenuation and speed along them, re-emission time, `endReflectivity` of the mirrored end not read) and, in `lightCollection`, `captureProbability` (the
 capture by a fibre, a formula of the distance to it in mm, or `"file.root:graph"` from an optical simulation
 of Geant4), the `quantumEfficiency`, `timeJitter` and `gainSpread` of the SiPMs. `lightCollection` gives
-each photoelectron its time and charge, and `hitsToSignal` collects them in the channels. The light reaches
-the read end of each fibre (`readoutEnd` of the readout). Only the tracks and the analysis tree are stored
+each photoelectron its time and charge, and `hitsToSignal` collects them in the channels. The LiquidO fibres
+are read at both ends or at one end with the other one reflective; the readout reads them at one end
+(`readoutEnd`): half of the light captured goes directly to the read end and half is reflected at the
+other end (with `readoutEnd: "both"` that half goes to the channel of the other end). Only the tracks and the analysis tree are stored
 (`outputEventStorage: false` of the pipeline; `true` also stores the photoelectrons, the signals and the raw
 signals, slower and larger), and `maxDistance` (30 mm, 3 sigma of the light ball) limits the fibres that
 capture the light of a deposit, most of the processing time. The fibres must not intersect: the two
