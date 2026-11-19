@@ -47,8 +47,10 @@ To change the parameters of the light, edit `analysis/Geant4ToTracks.yaml`: `lig
 `scintillation` time profile (per particle) of the liquid, the `wls` response of the fibres (`Y11`:
 attenuation and speed along them, re-emission time, `endReflectivity` of the mirrored end not read) and, in `lightCollection`, `captureProbability` (the
 capture by a fibre, a formula of the distance to it in mm, or `"file.root:graph"` from an optical simulation
-of Geant4), the `quantumEfficiency`, `timeJitter` and `gainSpread` of the SiPMs. `lightCollection` gives
-each photoelectron its time and charge, and `hitsToSignal` collects them in the channels. The LiquidO fibres
+of Geant4) and the `quantumEfficiency` of the SiPMs, and in `photosensor` the response of the SiPMs:
+`timeJitter` and `gainSpread`, and commented, to be measured, dark counts, crosstalk, afterpulses and the
+saturation of the cells. `lightCollection` gives each photoelectron its time, `photosensor` a hit per
+avalanche with its time and charge, and `hitsToSignal` collects them in the channels. The LiquidO fibres
 are read at both ends or at one end with the other one reflective; the readout reads them at one end
 (`readoutEnd`): half of the light captured goes directly to the read end and half is reflected at the
 other end (with `readoutEnd: "both"` that half goes to the channel of the other end). Only the tracks and the analysis tree are stored

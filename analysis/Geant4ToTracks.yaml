@@ -33,9 +33,9 @@
 # used), attenuated and delayed along the fibre. The amplitude 0.0335 keeps the 0.4 photoelectrons per keV
 # of the macro before the transport in the fibre: 0.0335 * (1 + 0.9) / 2 = 0.0318 (0.0318 with both ends
 # read; to be tuned again: the attenuation along the fibre gives less light); lightCollection gives each
-# photoelectron its time (scintillation profile of the liquid,
-# re-emission of the fibre, SiPM jitter) and charge (SiPM gain spread), and hitsToSignal collects them in the
-# channels.
+# photoelectron its time (scintillation profile of the liquid, re-emission of the fibre), photosensor the
+# response of the SiPMs (a hit per avalanche: jitter, gain spread; dark counts, crosstalk, afterpulses and
+# cell saturation commented until measured), and hitsToSignal collects them in the channels.
 
 manager:
   class: "TRestManager"
@@ -103,9 +103,19 @@ manager:
       maxDistance: 30 mm  # 3 sigma of the light ball: exp(-30^2 / (2 * 10^2)) = 1 % of the capture at 0
       wlsMedium: "Y11"
       quantumEfficiency: 0.4  # SiPMs
+      observables: ["NPhotoelectrons", "NHitsWithoutChannel"]
+    photosensor:
+      class: "TRestDetectorPhotosensorProcess"
       timeJitter: 0.2 ns  # SiPMs
       gainSpread: 0.1  # SiPMs
-      observables: ["NPhotoelectrons", "NHitsWithoutChannel"]
+      # Not modelled yet (values of the SiPMs to be measured):
+      # darkCountRate: 100 kHz
+      # darkCountWindow: [-4 us, 16.48 us]  # the raw signal window (triggerDelay, 512 x 40 ns)
+      # crosstalkProbability: 0.05
+      # afterpulseProbability: 0.02
+      # afterpulseDelay: 50 ns
+      # cells: 3600
+      # cellRecoveryTime: 50 ns
     hitsToSignal:
       class: "TRestDetectorHitsToSignalProcess"
       sampling: 0.04 us
